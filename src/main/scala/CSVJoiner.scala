@@ -3,6 +3,7 @@ import java.util.NoSuchElementException
 
 object CSVJoiner {
   def main(args : Array[String]): Unit = {
+    //TODO: default join, documentation, tests, delete results.csv file
     val firstFile = args(0)
     val secondFile = args(1)
     val columnName = args(2)
@@ -16,7 +17,7 @@ object CSVJoiner {
       case _: NoSuchFileException => println("There is no file with such name!")
       case _: IllegalArgumentException => println("Wrong join type, only allowed: \"inner\", \"left\" and \"right\"!")
       case _: NoSuchElementException => println("Wrong column name, at least one of the files does not contains such column!")
-      case _: RuntimeException => println("Joining column is not unique in its values!")
+      //case _: RuntimeException => println("Joining column is not unique in its values!")
     }
   }
 }
