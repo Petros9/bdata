@@ -3,7 +3,6 @@ import java.util.NoSuchElementException
 
 object CSVJoiner {
   def main(args : Array[String]): Unit = {
-    os.remove(CSVJoinerConf.filesPaths / CSVJoinerConf.resultFileName)
     val firstFile = args(0)
     val secondFile = args(1)
     val columnName = args(2)
