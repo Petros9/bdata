@@ -1,4 +1,4 @@
-import scala.collection.mutable
+case class Indexes(firstFileIndex: Int, secondFileIndex: Int)
 
 class FileJoiner() {
 
@@ -13,7 +13,7 @@ class FileJoiner() {
     os.write.append(CSVJoinerConf.filesPaths / CSVJoinerConf.resultFileName, resultRow)
   }
 
-  def getJoinColumnIndex(firstFile: String, secondFile: String, columnName: String): Option[(Int, Int)] = {
+  def getJoinColumnIndex(firstFile: String, secondFile: String, columnName: String): Option[Indexes] = {
     val firstHeader = os.read.lines.stream(CSVJoinerConf.filesPaths / firstFile).head
     val secondHeader = os.read.lines.stream(CSVJoinerConf.filesPaths / secondFile).head
 
@@ -23,39 +23,37 @@ class FileJoiner() {
       case (-1, -1) => None
       case (-1, _) => None
       case (_, -1) => None
-      case (index1, index2) => Some((index1, index2))
+      case (index1, index2) => Some(Indexes(index1, index2))
     }
   }
 
   def findSecondFileMatchingRows(firstFileElements: Array[String], joiningColumnValue: String, secondFile: String, joiningColumnIndex: Int, outer: Boolean, isHeader: Boolean): Unit = {
-    val outerStack = mutable.Stack[Boolean]()
+    var wasPlaced = false
     os.read.lines.stream(CSVJoinerConf.filesPaths / secondFile).foreach(line => {
       val rowElements = line.split(CSVJoinerConf.csvDelimiter)
       if(joiningColumnValue.equals(rowElements(joiningColumnIndex))) {
-        //if(nonInnerStack.size < 2) {
           mergeRows(firstFileElements, rowElements, joiningColumnIndex)
-          if(outerStack.isEmpty) outerStack.append(true)
-        //} else throw new RuntimeException
+          wasPlaced = true
       }
     })
 
-    if(outerStack.isEmpty && outer && !isHeader) addLeftRightJoinRow(firstFileElements, os.read.lines.stream(CSVJoinerConf.filesPaths / secondFile).head.split(CSVJoinerConf.csvDelimiter).length)
+    if(!wasPlaced && outer && !isHeader) addLeftRightJoinRow(firstFileElements, os.read.lines.stream(CSVJoinerConf.filesPaths / secondFile).head.split(CSVJoinerConf.csvDelimiter).length)
   }
 
   def processTheFirstFile(firstFileName: String, joiningColumnName: String, secondFileName: String, outer: Boolean): Unit = {
     getJoinColumnIndex(firstFileName, secondFileName, joiningColumnName) match {
-      case Some((index1, index2)) =>
+      case Some(indexes) =>
         val firstHeader = os.read.lines.stream(CSVJoinerConf.filesPaths / firstFileName).head
         os.read.lines.stream(CSVJoinerConf.filesPaths / firstFileName).foreach( row => {
           val rowElements = row.split(CSVJoinerConf.csvDelimiter)
-          findSecondFileMatchingRows(rowElements, rowElements(index1), secondFileName, index2, outer, isHeader = row.equals(firstHeader))
+          findSecondFileMatchingRows(rowElements, rowElements(indexes.firstFileIndex), secondFileName, indexes.secondFileIndex, outer, isHeader = row.equals(firstHeader))
         })
 
       case None => throw new NoSuchElementException
     }
   }
 
-  def mergeFiles(firstFileName: String, secondFileName: String, columnName: String, joinType: String): Unit = {
+  def performJoinOperation(firstFileName: String, secondFileName: String, columnName: String, joinType: String): Unit = {
     joinType match {
       case CSVJoinerConf.inner => processTheFirstFile(firstFileName, columnName, secondFileName, outer = false)
       case CSVJoinerConf.left => processTheFirstFile(firstFileName, columnName, secondFileName, outer = true)
