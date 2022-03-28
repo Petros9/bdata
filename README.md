@@ -61,3 +61,5 @@ The function adds values from the first row into the result file and adds empty 
 **Tests**
 
 *FileJoinerTest*
+
+As core of the application is based on processing streams and working on files I've decided to test whether functionalities used in the code work correctly.
